@@ -18,16 +18,14 @@ configure_file(
   "include/Tmx.h.in"
   "${CMAKE_CURRENT_BINARY_DIR}/include/Tmx.h")
 
-option(USE_MINIZ  "Use miniz.c instead of zlib (default: OFF)" OFF)
-option(BUILD_SHARED_LIBS "Build shared libs, otherwise static libs. (default: ON)" ON)
+option(USE_MINIZ  "Use miniz.c instead of zlib (default: OFF)" ON)
+option(BUILD_SHARED_LIBS "Build shared libs, otherwise static libs. (default: ON)" OFF)
 option(BUILD_TINYXML2  "Build tinyxml2 as external project (default: OFF)" OFF)
 option(BUILD_TESTS  "Build tests. (default: OFF)" OFF)
 option(BUILD_DOCS  "Build documentation. (default: OFF)" OFF)
 
 #Dependencies Settings
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/deps.cmake)
-
-find_package(tinyxml2 REQUIRED)
 
 if(NOT USE_MINIZ)
   find_package(ZLIB) #<-- build it as external project?
@@ -42,6 +40,8 @@ if(BUILD_SHARED_LIBS)
 endif()
 
 target_sources(tmxparser
+  PRIVATE thirdparty/tinyxml2/tinyxml2.cpp
+  PRIVATE thirdparty/tinyxml2/tinyxml2.h
   PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/include/Tmx.h
   PRIVATE src/TmxColor.cpp
   PRIVATE include/TmxColor.h
@@ -96,26 +96,30 @@ if(USE_MINIZ)
 endif()
 
 target_include_directories(tmxparser PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/tinyxml2>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>)
+# PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>)
+)
 
-target_compile_options(tmxparser
-  PRIVATE -pedantic
-  PRIVATE -Wall
-  PRIVATE -Werror=strict-prototypes
-  PRIVATE -Werror=old-style-definition
-  PRIVATE -Werror=missing-prototypes)
-if(NOT USE_MINIZ)
+if(CMAKE_COMPILER_IS_GNUCXX)
   target_compile_options(tmxparser
-    PRIVATE -Werror)
+    PRIVATE -pedantic
+    PRIVATE -Wall
+    PRIVATE -Werror=strict-prototypes
+    PRIVATE -Werror=old-style-definition
+    PRIVATE -Werror=missing-prototypes)
+  if(NOT USE_MINIZ)
+    target_compile_options(tmxparser
+      PRIVATE -Werror)
+  endif()
 endif()
 
-target_compile_features(tmxparser
-  PRIVATE cxx_std_11)
-
-target_link_libraries(tmxparser
-  PRIVATE tinyxml2)
+set_target_properties(tmxparser PROPERTIES
+  CXX_STANDARD 14
+  CXX_STANDARD_REQUIRED YES
+  CXX_EXTENSIONS NO
+)
 
 if(NOT USE_MINIZ)
   target_link_libraries(tmxparser
