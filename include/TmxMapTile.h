@@ -45,6 +45,7 @@ namespace Tmx
         MapTile()
             : tilesetId(0)
             , id(0)
+			, gid(0)
             , flippedHorizontally(false)
             , flippedVertically(false)
             , flippedDiagonally(false)
